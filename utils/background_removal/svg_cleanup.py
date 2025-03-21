@@ -4,6 +4,7 @@ SVG cleanup functionality for background removal.
 
 import xml.etree.ElementTree as ET
 import re
+from loguru import logger
 
 def calculate_path_area(path_data):
     """
@@ -101,18 +102,20 @@ def calculate_new_dimensions(paths):
 
     return min_x, min_y, max_x, max_y
 
-def find_and_remove_largest_rectangle(svg_file, output_file, auto_resize=True):
+def find_and_remove_largest_rectangle(svg_file, output_file, area_threshold=0.9, auto_resize=True):
     """
-    Find and remove the largest rectangle from SVG file.
+    Find and remove the largest rectangle from SVG file if it exceeds the area threshold.
     
     Args:
         svg_file (str): Path to input SVG file
         output_file (str): Path for output SVG file
+        area_threshold (float): Threshold ratio of total area to consider as background (0.0-1.0)
         auto_resize (bool): Whether to automatically resize SVG after removal
         
     Returns:
         str: Path to processed SVG file
     """
+    logger.info(f"Processing SVG file: {svg_file}")
     try:
         # Parse SVG file
         tree = ET.parse(svg_file)
@@ -127,43 +130,54 @@ def find_and_remove_largest_rectangle(svg_file, output_file, auto_resize=True):
             print("No paths found in SVG file.")
             return None
 
-        largest_area = 0
-        largest_path = None
+        # Calculate total SVG area
+        total_area = 0
+        path_areas = {}
 
-        # Find path with largest area
+        logger.info("Calculating path areas...")
         for path in paths:
             path_data = path.get('d', '')
-
-            # Check if path is closed (contains Z)
-            if 'Z' in path_data:
-                # Calculate area
+            if 'Z' in path_data:  # Only consider closed paths
                 area = calculate_path_area(path_data)
-
-                # Apply transform factor
                 transform = path.get('transform', '')
                 tx, ty = get_transform_values(transform)
                 transform_factor = 1 + (abs(tx) + abs(ty)) / 1000
                 area *= transform_factor
+                path_areas[path] = area
+                total_area += area
 
-                if area > largest_area:
-                    largest_area = area
-                    largest_path = path
+        # Find path with largest area ratio
+        largest_area = 0
+        largest_path = None
+        for path, area in path_areas.items():
+            area_ratio = area / total_area if total_area > 0 else 0
+            logger.debug(f"Path area ratio: {area_ratio:.2%}")
+            
+            if area_ratio > area_threshold and area > largest_area:
+                largest_area = area
+                largest_path = path
 
-        # Remove largest rectangle if found
+        # Remove largest path if it exceeds threshold
         if largest_path is not None:
-            parent = None
-            for p in root.findall('.//*'):
-                for child in p:
-                    if child == largest_path:
-                        parent = p
-                        break
+            area_ratio = largest_area / total_area if total_area > 0 else 0
+            logger.info(f"Found background candidate with area ratio: {area_ratio:.2%}")
 
-            if parent is not None:
-                parent.remove(largest_path)
+            if area_ratio > area_threshold:
+                parent = None
+                for p in root.findall('.//*'):
+                    for child in p:
+                        if child == largest_path:
+                            parent = p
+                            break
+
+                if parent is not None:
+                    parent.remove(largest_path)
+                else:
+                    root.remove(largest_path)
+
+                logger.info(f"Removed background path with area ratio {area_ratio:.2%}")
             else:
-                root.remove(largest_path)
-
-            print(f"Removed rectangle with area {largest_area}")
+                logger.info(f"No path exceeded area threshold of {area_threshold:.2%}")
 
             # Update paths list
             paths = root.findall('.//{http://www.w3.org/2000/svg}path')
