@@ -1,5 +1,7 @@
 # Animal Grid Vectorizer 🐾
 
+![Image](https://github.com/user-attachments/assets/dd7dca6e-7c62-4767-b8fc-7269bf8f2bc5)
+
 グリッド状に配置された動物イラストを分割し、SVGベクター形式に変換するツールです。
 
 ## ✨ 主な機能
