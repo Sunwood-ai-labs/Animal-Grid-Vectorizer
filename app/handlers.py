@@ -12,7 +12,7 @@ from utils.svg_vectorizer import process_images_to_svg
 from utils.background_removal import (
     remove_background_simple,
     remove_background_advanced,
-    find_and_remove_largest_rectangle
+    find_and_remove_large_paths
 )
 from utils.image_captioner import ImageCaptioner
 
@@ -184,8 +184,8 @@ def handle_svg_conversion(image_paths, output_dir, svg_params, remove_rectangle=
             filename = os.path.basename(svg_file)
             output_path = os.path.join(rectangle_removed_dir, filename)
             
-            logger.info(f"Processing SVG for background removal: {svg_file}")
-            processed_path = find_and_remove_largest_rectangle(
+            logger.info(f"Processing SVG to remove large background paths: {svg_file}")
+            processed_path = find_and_remove_large_paths(
                 svg_file,
                 output_path,
                 area_threshold=area_threshold
@@ -223,11 +223,8 @@ def create_result_text(result, remove_bg, bg_method, remove_rectangle,
         result_text += f"{EMOJI['background']} 背景除去: {bg_method}モード\n"
     
     if remove_rectangle:
-        threshold_info = f" (面積比{area_threshold:.0%}以上)" if area_threshold else ""
-        result_text += f"{EMOJI['background']} SVGから背景を削除{threshold_info}\n"
-    
-    if remove_rectangle:
-        result_text += f"{EMOJI['background']} SVGから長方形を削除\n"
+        threshold_info = f" (面積比{area_threshold:.0%}以上の要素を削除)" if area_threshold else ""
+        result_text += f"{EMOJI['background']} SVGから大きな背景要素を削除{threshold_info}\n"
     
     if use_gemini and api_key:
         result_text += f"{EMOJI['caption']} キャプション生成完了\n"
