@@ -7,16 +7,20 @@ class ImageCaptioner:
     Geminiを使用して画像のキャプションを生成するクラス
     """
     
-    def __init__(self, api_key=None, model="xai/grok-2-vision-1212"):
+    def __init__(self, api_key=None, model=None):
         """
         初期化関数
         
         Args:
-            api_key (str, optional): XAI API Key
-            model (str): 使用するモデル名
+            api_key (str, optional): XAI API Key. 未指定の場合は.envのXAI_API_KEYを使用
+            model (str, optional): 使用するモデル名. 未指定の場合は.envのXAI_MODELまたはデフォルト値を使用
         """
-        self.api_key = api_key
-        self.model = model
+        # .envからAPIキーを取得（引数で指定がない場合）
+        self.api_key = api_key or os.getenv('XAI_API_KEY')
+        
+        # .envからモデル名を取得（引数で指定がない場合）
+        # 環境変数にない場合はデフォルト値を使用
+        self.model = model or os.getenv('XAI_MODEL', 'xai/grok-2-vision-1212')
         
     def set_api_key(self, api_key):
         """APIキーを設定する"""
@@ -48,8 +52,11 @@ class ImageCaptioner:
             prompt = "この画像に写っている動物を簡潔に説明してください。動物の種類と特徴を含めてください。"
             
         try:
-            # 環境変数にAPIキーを設定
-            os.environ['XAI_API_KEY'] = self.api_key
+            # APIキーを設定
+            api_key = self.api_key or os.getenv('XAI_API_KEY')
+            if not api_key:
+                return "APIキーが設定されていません"
+            os.environ['XAI_API_KEY'] = api_key
             
             # 画像をBase64エンコード
             with open(image_path, "rb") as f:
