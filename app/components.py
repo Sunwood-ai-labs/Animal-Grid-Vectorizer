@@ -60,7 +60,7 @@ def create_grid_components():
                 label=f"行数"
             )
             cols = gr.Slider(
-                minimum=1, maximum=10, value=6, step=1,
+                minimum=1, maximum=10, value=5, step=1,
                 label=f"列数"
             )
     return rows, cols
@@ -85,7 +85,7 @@ def create_background_components():
             info="SVGファイルから最大の面積を持つ要素（通常は背景）を削除し、自動的にリサイズします"
         )
         area_threshold = gr.Slider(
-            minimum=0.5, maximum=0.99, value=0.35, step=0.01,
+            minimum=0.1, maximum=0.99, value=0.35, step=0.01,
             label="背景判定の面積閾値 (0.5-0.99)",
             info="全体面積に対する比率がこの値を超える要素を背景として扱います",
             visible=False
@@ -193,9 +193,26 @@ def create_output_components():
             lines=5
         )
         
-        output_files = gr.File(
-            label=f"{EMOJI['download']} 変換されたSVGファイル",
-            file_count="multiple"
+        grid_display = gr.Checkbox(
+            label=f"{EMOJI['grid']} グリッド表示",
+            value=True,
+            info="SVGをグリッド状に配置して表示"
         )
+        
+        with gr.Row():
+            svg_preview = gr.HTML(
+                label=f"{EMOJI['art']} SVGプレビュー",
+                value="<div style='text-align:center'>SVGがここに表示されます</div>"
+            )
+        
+        with gr.Row():
+            output_files = gr.File(
+                label=f"{EMOJI['download']} 個別SVGファイル",
+                file_count="multiple"
+            )
+            zip_download = gr.File(
+                label=f"{EMOJI['folder']} ZIPアーカイブ",
+                file_count="single"
+            )
     
-    return overview_image, output_text, output_files
+    return overview_image, output_text, output_files, grid_display, svg_preview, zip_download

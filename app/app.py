@@ -60,7 +60,7 @@ def create_interface():
             
             with gr.Column():
                 # Output components
-                overview_image, output_text, output_files = create_output_components()
+                overview_image, output_text, output_files, grid_display, svg_preview, zip_download = create_output_components()
         
         # Event handlers
         process_btn.click(
@@ -68,9 +68,10 @@ def create_interface():
             inputs=[
                 input_image, rows, cols, remove_bg, bg_method, remove_rectangle, area_threshold,
                 use_gemini, api_key, model, caption_prompt,
-                color_mode, hierarchical, mode, filter_speckle, color_precision, corner_threshold
+                color_mode, hierarchical, mode, filter_speckle, color_precision, corner_threshold,
+                grid_display
             ],
-            outputs=[overview_image, output_text, output_files]
+            outputs=[overview_image, output_text, output_files, svg_preview, zip_download]
         )
         
         # Event handlers for UI components
