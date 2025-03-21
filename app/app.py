@@ -1,7 +1,11 @@
 import os
+from dotenv import load_dotenv
 import gradio as gr
 import tempfile
 import shutil
+
+# .envファイルを読み込む
+load_dotenv()
 from PIL import Image
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -101,10 +105,21 @@ def create_interface():
                         label=f"{EMOJI['ai']} Geminiを使って画像キャプションを生成",
                         value=False
                     )
+                    # .envから値を取得
+                    default_api_key = os.getenv('XAI_API_KEY', '')
+                    default_model = os.getenv('XAI_MODEL', 'xai/grok-2-vision-1212')
+
                     api_key = gr.Textbox(
                         label="Google API Key",
                         placeholder="sk-...",
+                        value=default_api_key,
                         type="password",
+                        visible=False
+                    )
+                    model = gr.Textbox(
+                        label="モデル名",
+                        placeholder="xai/grok-2-vision-1212",
+                        value=default_model,
                         visible=False
                     )
                     caption_prompt = gr.Textbox(
@@ -118,13 +133,14 @@ def create_interface():
                     def toggle_gemini_options(use_gemini):
                         return {
                             api_key: gr.update(visible=use_gemini),
+                            model: gr.update(visible=use_gemini),
                             caption_prompt: gr.update(visible=use_gemini)
                         }
                     
                     use_gemini.change(
                         fn=toggle_gemini_options,
                         inputs=[use_gemini],
-                        outputs=[api_key, caption_prompt]
+                        outputs=[api_key, model, caption_prompt]
                     )
                 
                 # SVG変換設定
@@ -185,8 +201,8 @@ def create_interface():
                     )
         
         def process_image(image_path, rows_val, cols_val, remove_bg_val, bg_method_val, remove_rectangle_val,
-                         use_gemini_val, api_key_val, caption_prompt_val,
-                         color_mode_val, hierarchical_val, mode_val, 
+                         use_gemini_val, api_key_val, model_val, caption_prompt_val,
+                         color_mode_val, hierarchical_val, mode_val,
                          filter_speckle_val, color_precision_val, corner_threshold_val):
             """
             画像処理のメイン関数
@@ -233,7 +249,7 @@ def create_interface():
                 
                 # Geminiによるキャプション生成とファイル名変更（オプション）
                 if use_gemini_val and api_key_val:
-                    captioner = ImageCaptioner(api_key=api_key_val)
+                    captioner = ImageCaptioner(api_key=api_key_val, model=model_val)
                     
                     # プロンプトが空の場合はデフォルトを使用
                     prompt = caption_prompt_val if caption_prompt_val else None
@@ -327,7 +343,7 @@ def create_interface():
             fn=process_image,
             inputs=[
                 input_image, rows, cols, remove_bg, bg_method, remove_rectangle,
-                use_gemini, api_key, caption_prompt,
+                use_gemini, api_key, model, caption_prompt,
                 color_mode, hierarchical, mode, filter_speckle, color_precision, corner_threshold
             ],
             outputs=[overview_image, output_text, output_files]
