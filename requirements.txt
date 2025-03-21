@@ -6,3 +6,4 @@ numpy
 matplotlib
 litellm==1.61.20
 requests
+loguru

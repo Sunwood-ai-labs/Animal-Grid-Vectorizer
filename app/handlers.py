@@ -5,6 +5,7 @@ Event handlers for Animal Grid Vectorizer.
 import os
 import tempfile
 import shutil
+from loguru import logger
 from .components import EMOJI
 from utils.grid_splitter import process_grid_image
 from utils.svg_vectorizer import process_images_to_svg
@@ -15,7 +16,7 @@ from utils.background_removal import (
 )
 from utils.image_captioner import ImageCaptioner
 
-def process_image(image_path, rows_val, cols_val, remove_bg_val, bg_method_val, remove_rectangle_val,
+def process_image(image_path, rows_val, cols_val, remove_bg_val, bg_method_val, remove_rectangle_val, area_threshold_val,
                  use_gemini_val, api_key_val, model_val, caption_prompt_val,
                  color_mode_val, hierarchical_val, mode_val,
                  filter_speckle_val, color_precision_val, corner_threshold_val):
@@ -29,6 +30,7 @@ def process_image(image_path, rows_val, cols_val, remove_bg_val, bg_method_val, 
         remove_bg_val (bool): Whether to remove background
         bg_method_val (str): Background removal method ('simple' or 'advanced')
         remove_rectangle_val (bool): Whether to remove largest rectangle from SVG
+        area_threshold_val (float): Area ratio threshold for background detection (0.5-0.99)
         use_gemini_val (bool): Whether to use Gemini for captioning
         api_key_val (str): Google API Key for Gemini
         model_val (str): Model name for Gemini
@@ -43,6 +45,7 @@ def process_image(image_path, rows_val, cols_val, remove_bg_val, bg_method_val, 
     Returns:
         tuple: (overview_image_path, result_text, output_file_list)
     """
+    logger.info("Starting image processing...")
     if not image_path:
         return None, "画像がアップロードされていません。", []
     
@@ -84,8 +87,11 @@ def process_image(image_path, rows_val, cols_val, remove_bg_val, bg_method_val, 
         }
         
         # SVG conversion process
+        logger.info("Starting SVG conversion...")
         svg_files = handle_svg_conversion(
-            refined_paths, output_dir, svg_params, remove_rectangle_val
+            refined_paths, output_dir, svg_params,
+            remove_rectangle=remove_rectangle_val,
+            area_threshold=area_threshold_val
         )
         
         # Create result text
@@ -145,8 +151,21 @@ def handle_caption_generation(image_paths, output_dir, api_key, model, prompt=No
     
     return captioned_paths if captioned_paths else image_paths
 
-def handle_svg_conversion(image_paths, output_dir, svg_params, remove_rectangle=False):
-    """Handle SVG conversion process."""
+def handle_svg_conversion(image_paths, output_dir, svg_params, remove_rectangle=False, area_threshold=0.9):
+    """
+    Handle SVG conversion process.
+    
+    Args:
+        image_paths (list): List of image paths to convert
+        output_dir (str): Output directory for SVG files
+        svg_params (dict): SVG conversion parameters
+        remove_rectangle (bool): Whether to remove background from SVGs
+        area_threshold (float): Area ratio threshold for background detection
+    
+    Returns:
+        list: Paths to converted SVG files
+    """
+    logger.info(f"Converting {len(image_paths)} images to SVG...")
     svg_output_dir = os.path.join(output_dir, "svg_output")
     os.makedirs(svg_output_dir, exist_ok=True)
     
@@ -165,7 +184,12 @@ def handle_svg_conversion(image_paths, output_dir, svg_params, remove_rectangle=
             filename = os.path.basename(svg_file)
             output_path = os.path.join(rectangle_removed_dir, filename)
             
-            processed_path = find_and_remove_largest_rectangle(svg_file, output_path)
+            logger.info(f"Processing SVG for background removal: {svg_file}")
+            processed_path = find_and_remove_largest_rectangle(
+                svg_file,
+                output_path,
+                area_threshold=area_threshold
+            )
             if processed_path:
                 rectangle_removed_files.append(processed_path)
         
@@ -174,13 +198,33 @@ def handle_svg_conversion(image_paths, output_dir, svg_params, remove_rectangle=
     return svg_files
 
 def create_result_text(result, remove_bg, bg_method, remove_rectangle,
-                      use_gemini, api_key, svg_files):
-    """Create result text message."""
+                      use_gemini, api_key, svg_files, area_threshold=None):
+    """
+    Create result text message.
+    
+    Args:
+        result (dict): Processing result info
+        remove_bg (bool): Whether background was removed
+        bg_method (str): Background removal method used
+        remove_rectangle (bool): Whether rectangle was removed from SVG
+        use_gemini (bool): Whether Gemini was used
+        api_key (str): Gemini API key
+        svg_files (list): List of processed SVG files
+        area_threshold (float, optional): Area threshold used for background removal
+    
+    Returns:
+        str: Formatted result message
+    """
+    logger.info("Creating result message...")
     result_text = f"{EMOJI['success']} 処理が完了しました！\n"
     result_text += f"{EMOJI['split']} 分割された画像: {len(result['refined_paths'])}個\n"
     
     if remove_bg:
         result_text += f"{EMOJI['background']} 背景除去: {bg_method}モード\n"
+    
+    if remove_rectangle:
+        threshold_info = f" (面積比{area_threshold:.0%}以上)" if area_threshold else ""
+        result_text += f"{EMOJI['background']} SVGから背景を削除{threshold_info}\n"
     
     if remove_rectangle:
         result_text += f"{EMOJI['background']} SVGから長方形を削除\n"
@@ -192,11 +236,3 @@ def create_result_text(result, remove_bg, bg_method, remove_rectangle,
     
     return result_text
 
-def toggle_gemini_options(use_gemini):
-    """Toggle visibility of Gemini options."""
-    import gradio as gr
-    return {
-        "api_key": gr.update(visible=use_gemini),
-        "model": gr.update(visible=use_gemini),
-        "caption_prompt": gr.update(visible=use_gemini)
-    }
