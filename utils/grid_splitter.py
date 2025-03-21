@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import os
+import xml.etree.ElementTree as ET
 from matplotlib import pyplot as plt
 
 def create_output_directory(output_dir):
@@ -213,3 +214,89 @@ def process_grid_image(image_path, output_base_dir='output', rows=3, cols=6):
         'split_dir': split_dir,
         'refined_dir': refined_dir
     }
+
+def create_grid_layout(svg_files, output_path, rows, cols):
+    """
+    Create a single SVG file with grid layout of all SVG files.
+    
+    Args:
+        svg_files (list): List of SVG file paths
+        output_path (str): Path where the grid layout SVG will be saved
+        rows (int): Number of rows in grid
+        cols (int): Number of columns in grid
+    
+    Returns:
+        str: Path to the created grid SVG file
+    """
+    if not svg_files:
+        print("No SVG files provided")
+        return None
+
+    # Create root SVG element
+    svg = ET.Element('svg')
+    svg.set('xmlns', 'http://www.w3.org/2000/svg')
+    
+    # Calculate grid dimensions
+    cell_width = 200  # Default cell width
+    cell_height = 200  # Default cell height
+    padding = 50  # Padding between cells
+    
+    grid_width = cols * (cell_width + padding) - padding
+    grid_height = rows * (cell_height + padding) - padding
+    
+    # Set SVG dimensions
+    svg.set('width', str(grid_width))
+    svg.set('height', str(grid_height))
+    svg.set('viewBox', f'0 0 {grid_width} {grid_height}')
+    
+    # Add each SVG file to the grid
+    for idx, svg_file in enumerate(svg_files):
+        if idx >= rows * cols:  # Skip if exceeds grid size
+            break
+        
+        try:
+            # Calculate position in grid
+            row = idx // cols
+            col = idx % cols
+            x = col * (cell_width + padding)
+            y = row * (cell_height + padding)
+            
+            # Read SVG file
+            tree = ET.parse(svg_file)
+            root = tree.getroot()
+            
+            # Create group for this SVG
+            g = ET.SubElement(svg, 'g')
+            g.set('transform', f'translate({x},{y})')
+            
+            # Get viewBox from original SVG
+            viewBox = root.get('viewBox')
+            if viewBox:
+                # Extract dimensions from viewBox
+                vb_parts = viewBox.split()
+                if len(vb_parts) == 4:
+                    orig_width = float(vb_parts[2])
+                    orig_height = float(vb_parts[3])
+                    
+                    # Calculate scale to fit in cell
+                    scale_x = cell_width / orig_width
+                    scale_y = cell_height / orig_height
+                    scale = min(scale_x, scale_y)
+                    
+                    # Update transform with scaling
+                    g.set('transform', f'translate({x},{y}) scale({scale})')
+            
+            # Copy all elements from original SVG
+            for child in root:
+                g.append(child)
+                
+        except Exception as e:
+            print(f"Error processing {svg_file}: {str(e)}")
+            continue
+    
+    # Save the grid layout SVG
+    tree = ET.ElementTree(svg)
+    tree.write(output_path)
+    print(f"Grid layout SVG saved to {output_path}")
+    
+    return output_path
