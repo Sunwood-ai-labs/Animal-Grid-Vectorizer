@@ -85,7 +85,7 @@ def create_background_components():
             info="SVGファイルから最大の面積を持つ要素（通常は背景）を削除し、自動的にリサイズします"
         )
         area_threshold = gr.Slider(
-            minimum=0.5, maximum=0.99, value=0.9, step=0.01,
+            minimum=0.5, maximum=0.99, value=0.35, step=0.01,
             label="背景判定の面積閾値 (0.5-0.99)",
             info="全体面積に対する比率がこの値を超える要素を背景として扱います",
             visible=False
