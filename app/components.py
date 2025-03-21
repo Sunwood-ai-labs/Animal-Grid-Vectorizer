@@ -5,6 +5,18 @@ Gradio UI components for Animal Grid Vectorizer.
 import gradio as gr
 import os
 
+def toggle_area_threshold(x):
+    """Event handler for area threshold visibility."""
+    return gr.update(visible=x)
+
+def toggle_gemini_opts(x):
+    """Event handler for Gemini options visibility."""
+    return [
+        gr.update(visible=x),  # api_key
+        gr.update(visible=x),  # model
+        gr.update(visible=x)   # caption_prompt
+    ]
+
 # Emoji definitions
 EMOJI = {
     "grid": "🔲",
@@ -68,11 +80,24 @@ def create_background_components():
             info="simple: シンプルな閾値ベースの背景除去（高速）、advanced: 高度なGrabCutアルゴリズムを使用した背景除去（高品質）"
         )
         remove_rectangle = gr.Checkbox(
-            label=f"SVGから最大の長方形を削除する",
+            label=f"SVGから背景を削除する",
             value=False,
-            info="SVGファイルから最大の長方形（通常は背景）を削除し、自動的にリサイズします"
+            info="SVGファイルから最大の面積を持つ要素（通常は背景）を削除し、自動的にリサイズします"
         )
-    return remove_bg, bg_method, remove_rectangle
+        area_threshold = gr.Slider(
+            minimum=0.5, maximum=0.99, value=0.9, step=0.01,
+            label="背景判定の面積閾値 (0.5-0.99)",
+            info="全体面積に対する比率がこの値を超える要素を背景として扱います",
+            visible=False
+        )
+    # Rectangle removal checkbox event
+    remove_rectangle.change(
+        toggle_area_threshold,
+        inputs=[remove_rectangle],
+        outputs=[area_threshold]
+    )
+    
+    return remove_bg, bg_method, remove_rectangle, area_threshold
 
 def create_caption_components():
     """Create Gemini caption generation components."""
@@ -105,6 +130,13 @@ def create_caption_components():
             placeholder="この画像に写っている動物を簡潔に説明してください。動物の種類と特徴を含めてください。",
             visible=False,
             value="この画像の英語のキャプションを作成して"
+        )
+    
+        # Gemini checkbox event
+        use_gemini.change(
+            fn=toggle_gemini_opts,
+            inputs=[use_gemini],
+            outputs=[api_key, model, caption_prompt]
         )
     
     return use_gemini, api_key, model, caption_prompt

@@ -13,7 +13,8 @@ from .components import (
     create_svg_components,
     create_output_components
 )
-from .handlers import process_image, toggle_gemini_options
+from .handlers import process_image
+from .components import toggle_gemini_opts
 
 # Load environment variables
 load_dotenv()
@@ -46,7 +47,7 @@ def create_interface():
                 rows, cols = create_grid_components()
                 
                 # Background removal settings
-                remove_bg, bg_method, remove_rectangle = create_background_components()
+                remove_bg, bg_method, remove_rectangle, area_threshold = create_background_components()
                 
                 # Caption generation settings
                 use_gemini, api_key, model, caption_prompt = create_caption_components()
@@ -65,15 +66,16 @@ def create_interface():
         process_btn.click(
             fn=process_image,
             inputs=[
-                input_image, rows, cols, remove_bg, bg_method, remove_rectangle,
+                input_image, rows, cols, remove_bg, bg_method, remove_rectangle, area_threshold,
                 use_gemini, api_key, model, caption_prompt,
                 color_mode, hierarchical, mode, filter_speckle, color_precision, corner_threshold
             ],
             outputs=[overview_image, output_text, output_files]
         )
         
+        # Event handlers for UI components
         use_gemini.change(
-            fn=toggle_gemini_options,
+            fn=toggle_gemini_opts,
             inputs=[use_gemini],
             outputs=[api_key, model, caption_prompt]
         )
