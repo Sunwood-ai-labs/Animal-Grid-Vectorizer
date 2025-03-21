@@ -102,9 +102,9 @@ def calculate_new_dimensions(paths):
 
     return min_x, min_y, max_x, max_y
 
-def find_and_remove_largest_rectangle(svg_file, output_file, area_threshold=0.9, auto_resize=True):
+def find_and_remove_large_paths(svg_file, output_file, area_threshold=0.9, auto_resize=True):
     """
-    Find and remove the largest rectangle from SVG file if it exceeds the area threshold.
+    Find and remove all paths that exceed the area threshold from SVG file.
     
     Args:
         svg_file (str): Path to input SVG file
@@ -146,43 +146,41 @@ def find_and_remove_largest_rectangle(svg_file, output_file, area_threshold=0.9,
                 path_areas[path] = area
                 total_area += area
 
-        # Find path with largest area ratio
-        largest_area = 0
-        largest_path = None
+        # Find all paths that exceed the area threshold
+        large_paths = []
         for path, area in path_areas.items():
             area_ratio = area / total_area if total_area > 0 else 0
             logger.debug(f"Path area ratio: {area_ratio:.2%}")
             
-            if area_ratio > area_threshold and area > largest_area:
-                largest_area = area
-                largest_path = path
-
-        # Remove largest path if it exceeds threshold
-        if largest_path is not None:
-            area_ratio = largest_area / total_area if total_area > 0 else 0
-            logger.info(f"Found background candidate with area ratio: {area_ratio:.2%}")
-
             if area_ratio > area_threshold:
+                large_paths.append(path)
+                logger.info(f"Found large path with area ratio: {area_ratio:.2%}")
+
+        # Remove all large paths
+        if large_paths:
+            paths_removed = 0
+            for path in large_paths:
                 parent = None
                 for p in root.findall('.//*'):
                     for child in p:
-                        if child == largest_path:
+                        if child == path:
                             parent = p
                             break
 
                 if parent is not None:
-                    parent.remove(largest_path)
+                    parent.remove(path)
                 else:
-                    root.remove(largest_path)
+                    root.remove(path)
+                paths_removed += 1
 
-                logger.info(f"Removed background path with area ratio {area_ratio:.2%}")
-            else:
-                logger.info(f"No path exceeded area threshold of {area_threshold:.2%}")
+            logger.info(f"Removed {paths_removed} paths that exceeded area threshold of {area_threshold:.2%}")
+        else:
+            logger.info(f"No paths exceeded area threshold of {area_threshold:.2%}")
 
-            # Update paths list
-            paths = root.findall('.//{http://www.w3.org/2000/svg}path')
-            if not paths:
-                paths = root.findall('.//path')
+        # Update paths list
+        paths = root.findall('.//{http://www.w3.org/2000/svg}path')
+        if not paths:
+            paths = root.findall('.//path')
 
         # Auto-resize SVG if requested
         if auto_resize and paths:
