@@ -1,8 +1,8 @@
-gradio>=5.0.0
-vtracer>=0.6.0
-pillow>=9.0.0
-opencv-python>=4.5.0
-numpy>=1.20.0
-matplotlib>=3.5.0
-litellm>=1.0.0
-requests>=2.25.0
+gradio
+vtracer
+pillow
+opencv-python
+numpy
+matplotlib
+litellm==1.61.20
+requests
