@@ -1,105 +1,153 @@
-# Animal Grid Vectorizer 🐾
+<div align="center">
 
-グリッド状に配置された動物イラストを分割し、SVGベクター形式に変換するツールです。
+# 🐾 Animal Grid Vectorizer
+
+![Animal Grid Vectorizer Banner](https://github.com/user-attachments/assets/dd7dca6e-7c62-4767-b8fc-7269bf8f2bc5)
+
+[![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)
+[![Gradio](https://img.shields.io/badge/Gradio-5.0%2B-orange)](https://www.gradio.app/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/Status-Beta-yellow.svg)](https://github.com/Sunwood-ai-labs/Animal-Grid-Vectorizer)
+
+</div>
+
+グリッド状に配置された動物イラストを個別に分割し、SVGベクター形式に変換するAIパワードツールです。
 
 ## ✨ 主な機能
 
-- 🔲 **グリッド分割**: 行数・列数を指定して画像を個別に分割
-- 🧹 **背景除去**: 2種類の方法で画像の背景を除去
+- 🔲 **グリッド分割**: 
+  - 行数・列数を指定して画像を個別に分割
+  - 自動的な余白の除去と最適化
+  - 分割結果のプレビュー表示
+
+- 🧹 **背景除去**: 
   - シンプルモード: 閾値ベースの高速な背景除去
   - 高度モード: GrabCutアルゴリズムを使用した高品質な背景除去
-- 💬 **Geminiによる画像キャプション生成**: 分割された画像を分析して説明文を生成し、ファイル名として使用
-- 🖋️ **SVGベクター変換**: 分割された画像をSVGベクター形式に変換
-- 📐 **SVG最適化**: SVGから最大の長方形（通常は背景）を削除し、自動的にリサイズ
+  - SVGの大きな背景要素を自動検出・削除
+
+- 💬 **AI画像キャプション**:
+  - Google Geminiを使用した高精度な画像認識
+  - 自動ファイル名生成
+  - カスタマイズ可能なプロンプト
+
+- 🖋️ **SVGベクター変換**:
+  - カラー/白黒モードの選択
+  - 階層モード(積み重ね/切り抜き)
+  - トレースモードの最適化
+  - パス精度とノイズフィルタの調整
 
 ## 🚀 インストール方法
 
+1. リポジトリのクローン:
 ```bash
-# 依存関係のインストール
+git clone https://github.com/Sunwood-ai-labs/Animal-Grid-Vectorizer.git
+cd animal_grid_vectorizer
+```
+
+2. 依存関係のインストール:
+```bash
 pip install -r requirements.txt
 ```
 
-## 📋 使い方
+3. Gemini API設定 (オプション):
+- [Google AI Studio](https://aistudio.google.com/)でAPIキーを取得
+- `.env`ファイルに設定を追加:
+```env
+XAI_API_KEY=your-api-key-here
+XAI_MODEL=xai/grok-2-vision-1212
+```
 
+## 💻 使用方法
+
+1. アプリケーションの起動:
 ```bash
-# アプリケーションの起動
 python run.py
 ```
 
-## 🖥️ インターフェース
+2. Webインターフェースにアクセス:
+- デフォルトで`http://localhost:7860`が開きます
 
-Gradio 5を使用した直感的なインターフェースで、以下の操作が可能です：
+3. 基本的な処理手順:
+   1. グリッド画像をアップロード
+   2. グリッドサイズ(行数×列数)を設定
+   3. 必要に応じて背景除去を設定
+   4. Geminiキャプションの使用を選択（オプション）
+   5. SVG変換パラメータを調整
+   6. 「処理開始」をクリック
+   7. 結果をダウンロード
 
-1. 📤 **グリッド画像のアップロード**: 分割したい画像をアップロード
-2. 🔲 **グリッド設定**: 行数と列数を指定
-3. 🧹 **背景除去設定**: 背景除去の有効化と方法の選択
-4. 💬 **キャプション生成設定**: Gemini APIを使用した画像キャプション生成の設定
-5. ⚙️ **SVG変換設定**: カラーモード、階層モード、トレースモードなどの詳細設定
-6. ✨ **処理開始**: 設定に基づいて処理を実行
-7. 📥 **結果のダウンロード**: 処理結果をダウンロード
-
-## 🔧 Geminiキャプション生成の設定
-
-Geminiによる画像キャプション生成を使用するには、Google API Keyが必要です：
-
-1. Google AI Studioから[API Keyを取得](https://aistudio.google.com/)
-2. アプリケーション内の「Geminiを使って画像キャプションを生成」をオンにする
-3. 取得したAPI Keyを入力
-4. 必要に応じてキャプション生成プロンプトをカスタマイズ
-
-## 📁 ディレクトリ構造
+## 📁 プロジェクト構造
 
 ```
 animal_grid_vectorizer/
-├── app/                # Gradioアプリケーション
-│   └── app.py          # メインアプリケーションコード
-├── utils/              # ユーティリティモジュール
-│   ├── grid_splitter.py       # グリッド分割機能
-│   ├── svg_vectorizer.py      # SVGベクター変換機能
-│   ├── background_remover.py  # 背景除去機能
-│   └── image_captioner.py     # 画像キャプション生成機能
-├── static/             # 静的ファイル（サンプル画像など）
-├── run.py              # アプリケーション起動スクリプト
-└── requirements.txt    # 依存関係リスト
+├── app/                    # Gradioアプリケーション
+│   ├── handlers/          # 処理ハンドラ
+│   └── ui/               # UIコンポーネント
+├── utils/                  # ユーティリティモジュール
+│   ├── background_removal/ # 背景除去機能
+│   ├── grid_splitter/     # グリッド分割機能
+│   ├── svg_vectorizer/    # SVG変換機能
+│   └── image_captioner.py # 画像キャプション生成
+├── static/                 # 静的ファイル
+└── test_files/            # テストデータ
 ```
 
-## 📝 依存関係
+各モジュールの詳細については、それぞれのディレクトリのREADMEを参照してください:
+- [アプリケーション (app/)](app/README.md)
+- [ユーティリティ (utils/)](utils/README.md)
 
-- gradio >= 5.0.0
-- vtracer >= 0.6.0
-- pillow >= 9.0.0
-- opencv-python >= 4.5.0
-- numpy >= 1.20.0
-- matplotlib >= 3.5.0
-- litellm >= 1.0.0
-- requests >= 2.25.0
+## ⚙️ SVG変換パラメータ
 
-## 🎨 カスタマイズ
-
-SVG変換の詳細設定では、以下のパラメータをカスタマイズできます：
-
-- **カラーモード**: color（カラー）または binary（白黒）
-- **階層モード**: stacked（積み重ね）または cutout（切り抜き）
-- **トレースモード**: spline（スプライン）、polygon（ポリゴン）、または none（なし）
-- **ノイズフィルタ**: 小さなノイズを除去する閾値（0-128）
-- **色精度**: 色の精度（1-8）
-- **角度閾値**: 角の検出閾値（0-180）
-
-## 🌟 使用例
-
-1. グリッド状に配置された動物イラストをアップロード
-2. 行数と列数を設定（例: 3行 × 6列）
-3. 背景除去を有効化し、方法を選択
-4. Geminiキャプション生成を有効化し、API Keyを入力
-5. SVG変換設定をカスタマイズ（必要に応じて）
-6. 「処理開始」ボタンをクリック
-7. 処理結果をダウンロード
+| パラメータ | 範囲 | 説明 |
+|-----------|------|------|
+| カラーモード | color/binary | カラーまたは白黒での出力 |
+| 階層モード | stacked/cutout | パスの重なり方の制御 |
+| トレースモード | spline/polygon/none | パスの生成方法 |
+| ノイズフィルタ | 0-128 | 小さなノイズの除去 |
+| 色精度 | 1-8 | 色の量子化レベル |
+| 角度閾値 | 0-180 | 角の検出感度 |
 
 ## 🔄 処理フロー
 
-1. グリッド画像を分割して個別の画像に変換
-2. （オプション）背景を除去
-3. （オプション）Geminiで画像を分析してキャプションを生成
-4. 画像をSVGベクター形式に変換
-5. （オプション）SVGから最大の長方形を削除してリサイズ
-6. 結果を表示してダウンロード可能にする
+1. 入力画像の前処理
+   - 画像の読み込みと検証
+   - グリッドサイズの計算
+
+2. グリッド分割
+   - 均等な分割処理
+   - 余白の自動検出と除去
+
+3. 背景除去 (オプション)
+   - シンプルモード: 閾値ベース処理
+   - 高度モード: GrabCutアルゴリズム
+
+4. キャプション生成 (オプション)
+   - Gemini APIによる画像分析
+   - キャプションに基づくファイル名生成
+
+5. SVGベクター変換
+   - パラメータに基づく変換処理
+   - 背景要素の最適化
+   - サイズの自動調整
+
+6. 結果の出力
+   - プレビュー生成
+   - ZIPアーカイブ作成
+
+## 🤝 コントリビューション
+
+1. このリポジトリをフォーク
+2. 新しいブランチを作成: `git checkout -b feature/amazing-feature`
+3. 変更をコミット: `git commit -m 'Add amazing feature'`
+4. ブランチをプッシュ: `git push origin feature/amazing-feature`
+5. プルリクエストを作成
+
+## 📝 ライセンス
+
+[MIT License](LICENSE)で提供されています。
+
+## 🙏 謝辞
+
+- [Gradio](https://www.gradio.app/) - 直感的なWebインターフェース構築
+- [vtracer](https://github.com/visioncortex/vtracer) - 高品質なSVG変換
+- [Google Gemini](https://deepmind.google/technologies/gemini/) - AI画像分析
